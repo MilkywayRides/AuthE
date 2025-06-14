@@ -41,26 +41,15 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
+        toast.error(data.message || "Registration failed");
+        return;
       }
 
-      toast.success("Account created successfully!");
-
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        throw new Error(result.error);
-      }
-
-      router.push("/dashboard");
-      router.refresh();
+      toast.success("Registration successful! Please check your email for verification code.");
+      router.push(`/verify?email=${encodeURIComponent(email)}`);
     } catch (error) {
-      console.error(error);
-      toast.error(error instanceof Error ? error.message : "Registration failed");
+      console.error("[REGISTER_ERROR]", error);
+      toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
