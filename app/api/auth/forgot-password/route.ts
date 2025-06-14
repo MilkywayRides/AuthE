@@ -1,62 +1,57 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { Resend } from "resend";
-import { randomBytes } from "crypto";
+import { sendPasswordResetEmail } from "@/lib/email";
+import { generateToken } from "@/lib/token";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Invalid email address"),
+});
 
 export async function POST(req: Request) {
   try {
-    const { email } = await req.json();
-
-    if (!email) {
-      return new NextResponse("Email is required", { status: 400 });
-    }
+    const body = await req.json();
+    const { email } = forgotPasswordSchema.parse(body);
 
     const user = await prisma.user.findUnique({
-      where: {
-        email,
-      },
+      where: { email },
     });
 
     if (!user) {
-      return new NextResponse("User not found", { status: 404 });
+      return NextResponse.json(
+        { error: "No account found with this email address" },
+        { status: 404 }
+      );
     }
 
-    const resetToken = randomBytes(32).toString("hex");
-    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+    const token = await generateToken();
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    await prisma.user.update({
-      where: {
-        email,
-      },
+    await prisma.passwordResetToken.create({
       data: {
-        resetToken,
-        resetTokenExpiry,
+        token,
+        userId: user.id,
+        expires,
       },
     });
 
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${resetToken}`;
+    await sendPasswordResetEmail(email, token);
 
-    await resend.emails.send({
-      from: "Auth System <noreply@yourdomain.com>",
-      to: email,
-      subject: "Reset Your Password",
-      html: `
-        <h1>Reset Your Password</h1>
-        <p>Hi ${user.name},</p>
-        <p>You requested to reset your password. Click the link below to reset it:</p>
-        <p><a href="${resetUrl}">${resetUrl}</a></p>
-        <p>This link will expire in 1 hour.</p>
-        <p>If you didn't request this, please ignore this email.</p>
-      `,
-    });
-
-    return NextResponse.json({
-      message: "Password reset email sent",
-    });
+    return NextResponse.json(
+      { message: "Password reset email sent" },
+      { status: 200 }
+    );
   } catch (error) {
-    console.error("[FORGOT_PASSWORD_ERROR]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("Forgot password error:", error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Invalid email address" },
+        { status: 400 }
+      );
+    }
+    return NextResponse.json(
+      { error: "Failed to process request" },
+      { status: 500 }
+    );
   }
 } 

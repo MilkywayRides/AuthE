@@ -1,7 +1,8 @@
 import { Metadata } from "next";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/config/auth";
 import { redirect } from "next/navigation";
+import { ExtendedSession } from "@/types";
 
 export const metadata: Metadata = {
   title: "Admin Dashboard",
@@ -9,9 +10,9 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminPage() {
-  const session = await getServerSession(authOptions);
+  const session = (await getServerSession(authOptions)) as ExtendedSession | null;
 
-  if (!session) {
+  if (!session || !session.user) {
     redirect("/login");
   }
 
@@ -27,7 +28,7 @@ export default async function AdminPage() {
       
       <div className="grid gap-6">
         <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Welcome, {session.user.name}!</h2>
+          <h2 className="text-xl font-semibold mb-4">Welcome, {session.user.name || "Admin"}!</h2>
           <p className="text-gray-600 dark:text-gray-300">
             You have access to the admin dashboard.
           </p>

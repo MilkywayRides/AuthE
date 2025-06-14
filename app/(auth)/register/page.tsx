@@ -30,7 +30,7 @@ export default function RegisterPage() {
         <div className="relative z-20 mt-auto">
           <blockquote className="space-y-2">
             <p className="text-lg">
-              &ldquo;Join our platform and experience secure authentication with role-based access control.&rdquo;
+              &ldquo;This authentication system provides a secure and seamless way to manage user access and roles.&rdquo;
             </p>
             <footer className="text-sm">Sofia Davis</footer>
           </blockquote>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -16,46 +17,56 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 const formSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  otp: z.string().min(6, "OTP must be 6 digits").max(6, "OTP must be 6 digits"),
 });
 
-export function ForgotPasswordForm() {
+export function VerifyForm() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
+      otp: "",
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsLoading(true);
+      const searchParams = new URLSearchParams(window.location.search);
+      const email = searchParams.get("email");
 
-      const response = await fetch("/api/auth/forgot-password", {
+      if (!email) {
+        toast.error("Email is required");
+        return;
+      }
+
+      const response = await fetch("/api/auth/verify", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: values.email,
+          email,
+          otp: values.otp,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to send reset email");
+        throw new Error(data.error || "Failed to verify OTP");
       }
 
-      toast.success("Password reset email sent. Please check your inbox.");
-      form.reset();
+      toast.success("Email verified successfully");
+      router.push("/login");
     } catch (error) {
-      console.error("Forgot password error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to send reset email");
+      console.error("Verification error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to verify OTP");
     } finally {
       setIsLoading(false);
     }
@@ -66,14 +77,20 @@ export function ForgotPasswordForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="email"
+          name="otp"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Verification Code</FormLabel>
               <FormControl>
-                <Input
-                  type="email"
-                  placeholder="Enter your email address"
+                <InputOTP
+                  maxLength={6}
+                  render={({ slots }) => (
+                    <InputOTPGroup>
+                      {slots.map((slot, index) => (
+                        <InputOTPSlot key={index} {...slot} />
+                      ))}
+                    </InputOTPGroup>
+                  )}
                   {...field}
                 />
               </FormControl>
@@ -82,7 +99,7 @@ export function ForgotPasswordForm() {
           )}
         />
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Sending..." : "Send Reset Link"}
+          {isLoading ? "Verifying..." : "Verify Email"}
         </Button>
       </form>
     </Form>
