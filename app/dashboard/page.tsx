@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -19,7 +20,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <SignOutButton />
+      </div>
       
       <div className="grid gap-6">
         <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow">

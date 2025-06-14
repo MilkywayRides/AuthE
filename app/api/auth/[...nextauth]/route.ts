@@ -11,6 +11,16 @@ declare module "next-auth" {
   interface User {
     role?: string;
   }
+  
+  interface Session {
+    user: {
+      id?: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      role?: string;
+    }
+  }
 }
 
 declare module "next-auth/jwt" {
@@ -71,19 +81,33 @@ export const authOptions: NextAuthOptions = {
   debug: process.env.NODE_ENV === "development",
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        return {
-          ...token,
-          role: user.role,
-        };
+    async jwt({ token, user, trigger, session }) {
+      if (trigger === "update" && session?.role) {
+        token.role = session.role;
       }
+      
+      if (user) {
+        token.role = user.role;
+      }
+      
       return token;
     },
     async session({ session, token }) {
+      if (token.sub) {
+        const user = await prisma.user.findUnique({
+          where: { id: token.sub },
+          select: { role: true },
+        });
+        
+        if (user) {
+          session.user.role = user.role;
+        }
+      }
+      
       return {
         ...session,
         user: {
