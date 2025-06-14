@@ -8,12 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Icons } from "@/components/icons";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface LoginFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function LoginForm({ className, ...props }: LoginFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isGithubLoading, setIsGithubLoading] = useState<boolean>(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState<boolean>(false);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,8 +41,55 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
       router.refresh();
     } catch (error) {
       console.error(error);
+      toast.error("Invalid credentials");
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleGithubSignIn() {
+    try {
+      setIsGithubLoading(true);
+      const result = await signIn("github", {
+        redirect: false,
+      });
+
+      if (result?.error) {
+        throw new Error(result.error);
+      }
+
+      if (result?.ok) {
+        router.push("/dashboard");
+        router.refresh();
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to sign in with GitHub");
+    } finally {
+      setIsGithubLoading(false);
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    try {
+      setIsGoogleLoading(true);
+      const result = await signIn("google", {
+        redirect: false,
+      });
+
+      if (result?.error) {
+        throw new Error(result.error);
+      }
+
+      if (result?.ok) {
+        router.push("/dashboard");
+        router.refresh();
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to sign in with Google");
+    } finally {
+      setIsGoogleLoading(false);
     }
   }
 
@@ -93,10 +143,10 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
       <div className="grid grid-cols-2 gap-4">
         <Button
           variant="outline"
-          disabled={isLoading}
-          onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+          disabled={isGoogleLoading}
+          onClick={handleGoogleSignIn}
         >
-          {isLoading ? (
+          {isGoogleLoading ? (
             <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
           ) : (
             <Icons.google className="mr-2 h-4 w-4" />
@@ -105,10 +155,10 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
         </Button>
         <Button
           variant="outline"
-          disabled={isLoading}
-          onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
+          disabled={isGithubLoading}
+          onClick={handleGithubSignIn}
         >
-          {isLoading ? (
+          {isGithubLoading ? (
             <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
           ) : (
             <Icons.gitHub className="mr-2 h-4 w-4" />
