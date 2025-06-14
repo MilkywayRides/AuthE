@@ -74,18 +74,9 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
   async function handleGoogleSignIn() {
     try {
       setIsGoogleLoading(true);
-      const result = await signIn("google", {
-        redirect: false,
+      await signIn("google", {
+        callbackUrl: "/dashboard",
       });
-
-      if (result?.error) {
-        throw new Error(result.error);
-      }
-
-      if (result?.ok) {
-        router.push("/dashboard");
-        router.refresh();
-      }
     } catch (error) {
       console.error(error);
       toast.error("Failed to sign in with Google");
