@@ -20,12 +20,14 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
     event.preventDefault();
     setIsLoading(true);
 
-    const formData = new FormData(event.currentTarget);
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-
     try {
+      const formData = new FormData(event.currentTarget);
+      const name = formData.get("name") as string;
+      const email = formData.get("email") as string;
+      const password = formData.get("password") as string;
+
+      console.log("Submitting registration:", { name, email, password: "***" });
+
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
@@ -39,17 +41,17 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
       });
 
       const data = await response.json();
+      console.log("Registration response:", { status: response.status, data });
 
       if (!response.ok) {
-        toast.error(data.message || "Registration failed");
-        return;
+        throw new Error(data.message || "Registration failed");
       }
 
       toast.success("Registration successful! Please check your email for verification code.");
       router.push(`/verify?email=${encodeURIComponent(email)}`);
     } catch (error) {
       console.error("[REGISTER_ERROR]", error);
-      toast.error("An unexpected error occurred. Please try again.");
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -92,8 +94,11 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
             <Input
               id="password"
               name="password"
+              placeholder="Enter your password"
               type="password"
+              autoCapitalize="none"
               autoComplete="new-password"
+              autoCorrect="off"
               disabled={isLoading}
               required
             />
@@ -102,7 +107,7 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
             {isLoading && (
               <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Create Account
+            Sign Up
           </Button>
         </div>
       </form>

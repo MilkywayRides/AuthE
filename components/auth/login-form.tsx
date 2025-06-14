@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Icons } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import Link from "next/link";
 
 interface LoginFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -111,8 +112,16 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
               required
             />
           </div>
-          <div className="grid gap-1">
-            <Label htmlFor="password">Password</Label>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
+              <Link
+                href="/forgot-password"
+                className="text-sm text-muted-foreground hover:text-brand underline underline-offset-4"
+              >
+                Forgot your password?
+              </Link>
+            </div>
             <Input
               id="password"
               name="password"
